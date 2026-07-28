@@ -1,0 +1,6 @@
+{
+  "name": "OceanView Resort Management System",
+  "description": "Comprehensive luxury resort management platform for OceanView Country Club & Resort covering accommodations, VIP lounge, event venues, water sports, dining, courts, movie theater, and POS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
