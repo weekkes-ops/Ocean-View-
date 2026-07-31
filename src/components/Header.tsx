@@ -12,8 +12,11 @@ import {
   AlertCircle,
   Clock,
   Compass,
+  Palette,
+  Check,
 } from 'lucide-react';
-import { ResortSummaryStats } from '../types';
+import { ResortSummaryStats, ThemeMode } from '../types';
+import { useTheme, THEMES } from '../context/ThemeContext';
 
 interface HeaderProps {
   stats: ResortSummaryStats;
@@ -31,7 +34,9 @@ export const Header: React.FC<HeaderProps> = ({
   onSearch,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { theme, setTheme, config } = useTheme();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -126,10 +131,70 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="sm:hidden">AI</span>
               </button>
 
+              {/* Theme Switcher Button & Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowThemePicker(!showThemePicker);
+                    setShowNotifications(false);
+                  }}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-200 hover:text-white transition-all text-xs border border-slate-700 font-medium"
+                  title="Switch Application Theme"
+                >
+                  <Palette className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="hidden sm:inline">{config.icon} {config.name.split(' ')[0]}</span>
+                </button>
+
+                {showThemePicker && (
+                  <div className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-3 z-50 text-xs space-y-2">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-800 font-bold text-white">
+                      <div className="flex items-center gap-1.5">
+                        <Palette className="w-4 h-4 text-cyan-400" />
+                        <span>System Appearance Theme</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400">4 Luxury Options</span>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      {(Object.keys(THEMES) as ThemeMode[]).map((key) => {
+                        const item = THEMES[key];
+                        const isSelected = theme === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => {
+                              setTheme(key);
+                              setShowThemePicker(false);
+                            }}
+                            className={`w-full text-left p-2.5 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+                              isSelected
+                                ? 'bg-cyan-950/80 border-cyan-500/80 text-white font-bold'
+                                : 'bg-slate-950/50 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <span className="text-base">{item.icon}</span>
+                              <div>
+                                <div className="text-xs font-bold leading-none mb-0.5">{item.name}</div>
+                                <div className="text-[10px] text-slate-400 font-normal">{item.description}</div>
+                              </div>
+                            </div>
+                            {isSelected && <Check className="w-4 h-4 text-cyan-400 shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Notifications bell */}
               <div className="relative">
                 <button
-                  onClick={() => setShowNotifications(!showNotifications)}
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    setShowThemePicker(false);
+                  }}
                   className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white relative transition-colors"
                   title="Notifications"
                 >

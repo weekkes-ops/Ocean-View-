@@ -15,6 +15,7 @@ import { CafeView } from './components/CafeView';
 import { StaffTasksView } from './components/StaffTasksView';
 import { GuestsView } from './components/GuestsView';
 import { ReportsView } from './components/ReportsView';
+import { ProposalView } from './components/ProposalView';
 
 import { POSTerminalModal } from './components/POSTerminalModal';
 import { AIAssistantModal } from './components/AIAssistantModal';
@@ -50,9 +51,11 @@ import {
   GuestProfile,
   ResortSummaryStats,
 } from './types';
+import { useTheme } from './context/ThemeContext';
 
 export function App() {
   const [activeModule, setActiveModule] = useState<ModuleType>('dashboard');
+  const { config } = useTheme();
 
   // Core State
   const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
@@ -180,7 +183,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col antialiased">
+    <div className={`min-h-screen ${config.bgClass} font-sans flex flex-col antialiased transition-colors duration-200`}>
       
       {/* Header Bar */}
       <Header
@@ -272,6 +275,8 @@ export function App() {
           )}
 
           {activeModule === 'reports' && <ReportsView stats={stats} />}
+
+          {activeModule === 'proposal' && <ProposalView />}
         </main>
       </div>
 

@@ -18,6 +18,7 @@ import {
   CreditCard,
   MapPin,
   Phone,
+  BookOpen,
 } from 'lucide-react';
 import { ModuleType } from '../types';
 
@@ -34,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const mainNav = [
     { id: 'dashboard' as ModuleType, label: 'Master Dashboard', icon: LayoutDashboard },
+    { id: 'proposal' as ModuleType, label: 'Project Proposal', icon: BookOpen },
     { id: 'guests' as ModuleType, label: 'Guest Profiles', icon: UserCheck },
     { id: 'staff_tasks' as ModuleType, label: 'Staff Task Dispatch', icon: CheckSquare, badge: pendingTasksCount },
     { id: 'reports' as ModuleType, label: 'Financial & Analytics', icon: BarChart3 },

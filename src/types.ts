@@ -14,7 +14,10 @@ export type ModuleType =
   | 'guests'
   | 'staff_tasks'
   | 'reports'
+  | 'proposal'
   | 'ai_assistant';
+
+export type ThemeMode = 'light_luxury' | 'ocean_teal' | 'emerald_gold' | 'midnight_slate';
 
 export interface Room {
   id: string;
