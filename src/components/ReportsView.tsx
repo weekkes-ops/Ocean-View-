@@ -1,6 +1,7 @@
 import React from 'react';
-import { BarChart3, TrendingUp, DollarSign, Hotel, Waves, Utensils, Calendar } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, Hotel, Waves, Utensils, Calendar, Printer } from 'lucide-react';
 import { ResortSummaryStats } from '../types';
+import oceanViewLogo from '../assets/images/oceanview_resort_logo_1785518556173.jpg';
 
 interface ReportsViewProps {
   stats: ResortSummaryStats;
@@ -20,17 +21,38 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ stats }) => {
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
-        <div>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-cyan-400" />
-            <h1 className="text-xl font-extrabold text-white">Financial & Operational Analytics</h1>
+        <div className="flex items-center gap-4">
+          <img
+            src={oceanViewLogo}
+            alt="OceanView Logo"
+            className="h-12 w-auto object-contain rounded-lg bg-white p-1 shrink-0 shadow"
+            referrerPolicy="no-referrer"
+          />
+          <div>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-cyan-400" />
+              <h1 className="text-xl font-extrabold text-white">Financial & Operational Analytics</h1>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Revenue stream distribution, occupancy yield management, and outlet performance metrics.
+            </p>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Revenue stream distribution, occupancy yield management, and outlet performance metrics.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              try {
+                window.print();
+              } catch (err) {
+                console.warn('Print not supported or blocked:', err);
+              }
+            }}
+            className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs border border-slate-700 flex items-center gap-1.5 shadow"
+          >
+            <Printer className="w-4 h-4 text-cyan-400" />
+            <span>Print Report</span>
+          </button>
           <span className="px-3 py-1.5 bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 rounded-xl text-xs font-semibold">
             July 2026 Peak Season Summary
           </span>

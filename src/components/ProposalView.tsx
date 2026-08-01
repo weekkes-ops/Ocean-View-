@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import oceanViewLogo from '../assets/images/oceanview_resort_logo_1785518556173.jpg';
 import {
   FileText,
   ShieldCheck,
@@ -46,26 +47,40 @@ export const ProposalView: React.FC = () => {
       
       {/* Proposal Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950 p-6 rounded-2xl border border-slate-800 shadow-2xl flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-800/80 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
-              Official Master Commercial Proposal
-            </span>
-            <span className="px-2.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-800/80 rounded-full text-[10px] font-bold">
-              3-Tier Transformation Scope
-            </span>
+        <div className="flex items-start gap-4">
+          <img
+            src={oceanViewLogo}
+            alt="OceanView Resort Logo"
+            className="h-16 w-auto object-contain rounded-xl shadow border border-slate-700/60 bg-white p-1 shrink-0"
+            referrerPolicy="no-referrer"
+          />
+          <div>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="px-2.5 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-800/80 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                Official Master Commercial Proposal
+              </span>
+              <span className="px-2.5 py-0.5 bg-amber-950 text-amber-300 border border-amber-800/80 rounded-full text-[10px] font-bold">
+                3-Tier Transformation Scope
+              </span>
+            </div>
+            <h1 className="text-2xl font-black text-white tracking-tight">
+              OceanView Country Club & Resort Master Proposal
+            </h1>
+            <p className="text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed">
+              A comprehensive 3-part digital growth & operational technology proposition tailored for <strong>OceanView Country Club & Resort</strong> (10 Sweds Free Avenue, Sussex Village, Sierra Leone | +232-76-862043).
+            </p>
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">
-            OceanView Country Club & Resort Master Proposal
-          </h1>
-          <p className="text-xs text-slate-300 mt-1 max-w-3xl leading-relaxed">
-            A comprehensive 3-part digital growth & operational technology proposition tailored for <strong>OceanView Country Club & Resort</strong> (10 Sweds Free Avenue, Sussex Village, Sierra Leone | +232-76-862043).
-          </p>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           <button
-            onClick={() => window.print()}
+            onClick={() => {
+              try {
+                window.print();
+              } catch (err) {
+                console.warn('Printing not supported or blocked:', err);
+              }
+            }}
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-700 shadow-lg transition-all active:scale-95"
           >
             <Printer className="w-4 h-4 text-cyan-400" />

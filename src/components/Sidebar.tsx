@@ -1,4 +1,5 @@
 import React from 'react';
+import { Logo } from './Logo';
 import {
   LayoutDashboard,
   Hotel,
@@ -19,57 +20,127 @@ import {
   MapPin,
   Phone,
   BookOpen,
+  Package,
+  Settings,
 } from 'lucide-react';
 import { ModuleType } from '../types';
+import { useTheme } from '../context/ThemeContext';
 
 interface SidebarProps {
   activeModule: ModuleType;
   onSelectModule: (module: ModuleType) => void;
   pendingTasksCount: number;
+  lowStockCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeModule,
   onSelectModule,
   pendingTasksCount,
+  lowStockCount = 0,
 }) => {
-  const mainNav = [
-    { id: 'dashboard' as ModuleType, label: 'Master Dashboard', icon: LayoutDashboard },
-    { id: 'proposal' as ModuleType, label: 'Project Proposal', icon: BookOpen },
-    { id: 'guests' as ModuleType, label: 'Guest Profiles', icon: UserCheck },
-    { id: 'staff_tasks' as ModuleType, label: 'Staff Task Dispatch', icon: CheckSquare, badge: pendingTasksCount },
-    { id: 'reports' as ModuleType, label: 'Financial & Analytics', icon: BarChart3 },
+  const { layoutStyle, config, theme } = useTheme();
+
+  interface NavItem {
+    id: ModuleType;
+    label: string;
+    icon: any;
+    badge?: number;
+  }
+
+  const mainNav: NavItem[] = [
+    { id: 'dashboard', label: 'Master Dashboard', icon: LayoutDashboard },
+    { id: 'inventory', label: 'Stock & Inventory', icon: Package, badge: lowStockCount > 0 ? lowStockCount : undefined },
+    { id: 'proposal', label: 'Project Proposal', icon: BookOpen },
+    { id: 'guests', label: 'Guest Profiles', icon: UserCheck },
+    { id: 'staff_tasks', label: 'Staff Task Dispatch', icon: CheckSquare, badge: pendingTasksCount },
+    { id: 'reports', label: 'Financial & Analytics', icon: BarChart3 },
   ];
 
-  const amenityNav = [
-    { id: 'accommodations' as ModuleType, label: 'Accommodations', icon: Hotel },
-    { id: 'vip_lounge' as ModuleType, label: 'VIP Lounge', icon: Wine },
-    { id: 'event_venue' as ModuleType, label: 'Event Venue', icon: CalendarHeart },
-    { id: 'fitness_club' as ModuleType, label: 'Fitness Club', icon: Dumbbell },
-    { id: 'movie_theater' as ModuleType, label: 'Movie Theater', icon: Film },
-    { id: 'multipurpose_court' as ModuleType, label: 'Multipurpose Court', icon: Trophy },
-    { id: 'conference_rooms' as ModuleType, label: 'Conference Rooms', icon: Users2 },
-    { id: 'water_sports' as ModuleType, label: 'Water Sports', icon: Waves },
-    { id: 'restaurants' as ModuleType, label: 'Restaurants', icon: Utensils },
-    { id: 'cafe' as ModuleType, label: 'Cafe', icon: Coffee },
+  const amenityNav: NavItem[] = [
+    { id: 'accommodations', label: 'Accommodations', icon: Hotel },
+    { id: 'vip_lounge', label: 'VIP Lounge', icon: Wine },
+    { id: 'event_venue', label: 'Event Venue', icon: CalendarHeart },
+    { id: 'fitness_club', label: 'Fitness Club', icon: Dumbbell },
+    { id: 'movie_theater', label: 'Movie Theater', icon: Film },
+    { id: 'multipurpose_court', label: 'Multipurpose Court', icon: Trophy },
+    { id: 'conference_rooms', label: 'Conference Rooms', icon: Users2 },
+    { id: 'water_sports', label: 'Water Sports', icon: Waves },
+    { id: 'restaurants', label: 'Restaurants', icon: Utensils },
+    { id: 'cafe', label: 'Cafe', icon: Coffee },
   ];
 
+  // Top navigation mode hides sidebar completely on desktop for full width view
+  if (layoutStyle === 'top_navigation') {
+    return null;
+  }
+
+  // Compact Rail View Mode
+  if (layoutStyle === 'compact_sidebar') {
+    return (
+      <aside className={`w-20 ${config.sidebarBgClass} flex flex-col items-center py-4 border-r shrink-0 min-h-[calc(100vh-61px)] transition-all duration-200 z-20`}>
+        {/* Compact Logo */}
+        <div className="mb-6 cursor-pointer" title="OceanView Country Club & Resort">
+          <Logo size="sm" showText={false} variant={theme === 'light_luxury' ? 'light' : 'dark'} />
+        </div>
+
+        {/* Rail Icons */}
+        <div className="flex-1 w-full flex flex-col items-center gap-2 overflow-y-auto px-2 scrollbar-none">
+          {[...mainNav, ...amenityNav].map((item) => {
+            const Icon = item.icon;
+            const isActive = activeModule === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSelectModule(item.id)}
+                title={item.label}
+                className={`relative p-3 rounded-xl transition-all flex flex-col items-center justify-center group ${
+                  isActive
+                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30 font-bold scale-105'
+                    : 'hover:bg-white/10 opacity-70 hover:opacity-100'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                {item.badge ? (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold bg-orange-500 text-white flex items-center justify-center shadow">
+                    {item.badge}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Bottom Actions */}
+        <div className="pt-4 border-t border-white/10 flex flex-col items-center gap-2">
+          <button
+            onClick={() => onSelectModule('ai_assistant')}
+            title="AI Assistant"
+            className="p-3 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/30 hover:bg-orange-500/30 transition-all"
+          >
+            <Sparkles className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => onSelectModule('settings')}
+            title="Settings & Themes"
+            className={`p-3 rounded-xl transition-all ${
+              activeModule === 'settings' ? 'bg-cyan-500 text-white font-bold' : 'hover:bg-white/10 opacity-70 hover:opacity-100'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
+  // Expanded Standard Sidebar Mode
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 text-slate-300 flex flex-col shrink-0 min-h-[calc(100vh-61px)]">
+    <aside className={`w-64 ${config.sidebarBgClass} border-r border-slate-800 flex flex-col shrink-0 min-h-[calc(100vh-61px)] transition-all duration-200 z-20`}>
       
       {/* OceanView Crest */}
-      <div className="p-4 border-b border-slate-800 bg-slate-950/60">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 via-amber-400 to-rose-500 flex items-center justify-center p-0.5 shadow-lg">
-            <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center">
-              <Waves className="w-5 h-5 text-cyan-400" />
-            </div>
-          </div>
-          <div>
-            <h2 className="font-bold text-white text-sm leading-tight">OceanView</h2>
-            <p className="text-[11px] text-orange-400 italic">Country Club & Resort</p>
-          </div>
-        </div>
+      <div className="p-4 border-b border-white/10 bg-black/10">
+        <Logo size="md" variant={theme === 'light_luxury' ? 'light' : 'dark'} />
       </div>
 
       {/* Nav List */}
@@ -77,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         
         {/* Operations Overview */}
         <div>
-          <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider opacity-60">
             Resort Operations
           </div>
           <div className="space-y-1">
@@ -90,12 +161,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => onSelectModule(item.id)}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-cyan-500/20 to-sky-500/10 text-cyan-400 border border-cyan-500/30 font-semibold'
-                      : 'hover:bg-slate-800/80 text-slate-300 hover:text-white'
+                      ? config.navActiveBg
+                      : 'hover:bg-white/10 opacity-80 hover:opacity-100'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : 'opacity-70'}`} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge ? (
@@ -112,10 +183,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* 10 Core Amenities */}
         <div>
           <div className="px-3 mb-2 flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">
               Amenities & Outlets
             </span>
-            <span className="text-[9px] px-1.5 py-0.5 bg-slate-800 text-slate-400 rounded-md">
+            <span className="text-[9px] px-1.5 py-0.5 bg-black/20 rounded-md opacity-70">
               10 Outlets
             </span>
           </div>
@@ -129,11 +200,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => onSelectModule(item.id)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-cyan-500/20 to-amber-500/10 text-amber-300 border border-amber-500/30 font-semibold'
-                      : 'hover:bg-slate-800/80 text-slate-300 hover:text-white'
+                      ? config.navActiveBg
+                      : 'hover:bg-white/10 opacity-80 hover:opacity-100'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'opacity-70'}`} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -142,7 +213,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* AI & POS Launchers */}
-        <div className="pt-2 border-t border-slate-800 space-y-1">
+        <div className="pt-2 border-t border-white/10 space-y-1">
           <button
             onClick={() => onSelectModule('ai_assistant')}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
@@ -170,17 +241,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>POS Sales Terminal</span>
             </div>
           </button>
+
+          <button
+            onClick={() => onSelectModule('settings')}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              activeModule === 'settings'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
+                : 'bg-black/20 opacity-80 hover:opacity-100 border border-white/10'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Settings className="w-4 h-4 text-cyan-400" />
+              <span>Settings & Themes</span>
+            </div>
+          </button>
         </div>
 
       </div>
 
       {/* Footer Address Info */}
-      <div className="p-3 border-t border-slate-800 bg-slate-950/80 text-[11px] text-slate-400 space-y-1">
-        <div className="flex items-center gap-1.5 text-slate-300">
+      <div className="p-3 border-t border-white/10 bg-black/20 text-[11px] opacity-70 space-y-1">
+        <div className="flex items-center gap-1.5">
           <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
           <span className="truncate">10 Sweds Free Ave, Sussex</span>
         </div>
-        <div className="flex items-center gap-1.5 text-slate-400">
+        <div className="flex items-center gap-1.5">
           <Phone className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
           <span>+232-76-862043</span>
         </div>

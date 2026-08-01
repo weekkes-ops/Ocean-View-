@@ -11,13 +11,25 @@ export type ModuleType =
   | 'restaurants'
   | 'cafe'
   | 'pos_terminal'
+  | 'inventory'
   | 'guests'
   | 'staff_tasks'
   | 'reports'
   | 'proposal'
-  | 'ai_assistant';
+  | 'ai_assistant'
+  | 'settings';
 
-export type ThemeMode = 'light_luxury' | 'ocean_teal' | 'emerald_gold' | 'midnight_slate';
+export type ThemeMode =
+  | 'light_luxury'
+  | 'ocean_teal'
+  | 'emerald_gold'
+  | 'midnight_slate'
+  | 'sunset_coral'
+  | 'cobalt_sapphire';
+
+export type LayoutStyle = 'expanded_sidebar' | 'compact_sidebar' | 'top_navigation';
+
+export type LayoutDensity = 'comfortable' | 'compact' | 'spacious';
 
 export interface Room {
   id: string;
@@ -200,4 +212,32 @@ export interface ResortSummaryStats {
   pendingTasksCount: number;
   waterSportsActiveRentals: number;
   upcomingEventsCount: number;
+}
+
+export interface InventoryItem {
+  id: string;
+  sku: string;
+  name: string;
+  category: 'Food & Beverage' | 'VIP Lounge Spirits' | 'Water Sports Assets' | 'Housekeeping Supplies' | 'Cafe & Bakery' | 'Resort Retail';
+  outlet: string;
+  currentStock: number;
+  unit: string;
+  minThreshold: number;
+  unitCost: number;
+  unitPrice: number;
+  supplier: string;
+  lastRestocked: string;
+  status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+}
+
+export interface InventoryLog {
+  id: string;
+  itemId: string;
+  itemName: string;
+  type: 'Restock' | 'POS Sale Deduction' | 'Rental Allocation' | 'Wastage / Adjustment';
+  quantityChanged: number;
+  resultingStock: number;
+  timestamp: string;
+  performedBy: string;
+  notes?: string;
 }

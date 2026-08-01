@@ -21,7 +21,6 @@ export const POSTerminalModal: React.FC<POSTerminalModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'Credit Card' | 'Cash' | 'Charge to Room'>('Credit Card');
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
-  const [receiptPrinted, setReceiptPrinted] = useState(false);
 
   if (!isOpen) return null;
 
@@ -50,24 +49,31 @@ export const POSTerminalModal: React.FC<POSTerminalModalProps> = ({
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
+    const selectedRoom = rooms.find((r) => r.unitNumber === selectedRoomId);
+
     const tx = {
-      id: `TX-${Date.now().toString().slice(-5)}`,
-      items: cart,
+      id: `REC-${Date.now().toString().slice(-6)}`,
+      receiptNumber: `REC-${Date.now().toString().slice(-6)}`,
+      items: cart.map((c) => ({
+        id: c.item.id,
+        name: c.item.name,
+        qty: c.qty,
+        price: c.item.price,
+      })),
       subtotal,
       tax,
       total,
-      paymentMethod,
+      paymentMethod: paymentMethod === 'Charge to Room' ? `Room Charge (${selectedRoomId})` : paymentMethod === 'Cash' ? 'Cash (USD)' : 'Credit Card',
       chargeToRoom: paymentMethod === 'Charge to Room' ? selectedRoomId : undefined,
-      timestamp: new Date().toLocaleTimeString(),
+      guestName: selectedRoom ? selectedRoom.currentGuest : undefined,
+      roomNumber: selectedRoomId || undefined,
+      timestamp: `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+      cashierName: 'POS Cashier #01',
     };
 
     onCompleteTransaction(tx);
-    setReceiptPrinted(true);
-    setTimeout(() => {
-      setReceiptPrinted(false);
-      setCart([]);
-      onClose();
-    }, 1800);
+    setCart([]);
+    onClose();
   };
 
   return (
@@ -123,16 +129,8 @@ export const POSTerminalModal: React.FC<POSTerminalModalProps> = ({
             </button>
           </div>
 
-          {receiptPrinted ? (
-            <div className="flex-1 flex flex-col items-center justify-center space-y-3 text-center">
-              <CheckCircle2 className="w-12 h-12 text-emerald-400 animate-bounce" />
-              <div className="font-extrabold text-white text-base">Payment Completed!</div>
-              <p className="text-xs text-slate-400">Receipt printed & room folio updated.</p>
-            </div>
-          ) : (
-            <>
-              {/* Cart List */}
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+          {/* Cart List */}
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                 {cart.length === 0 ? (
                   <div className="text-center py-12 text-xs text-slate-500">
                     No items in cart. Click items on left catalog to add.
@@ -214,8 +212,6 @@ export const POSTerminalModal: React.FC<POSTerminalModalProps> = ({
                   Process Sale (${total.toFixed(2)})
                 </button>
               </div>
-            </>
-          )}
 
         </div>
       </div>

@@ -16,10 +16,13 @@ import { StaffTasksView } from './components/StaffTasksView';
 import { GuestsView } from './components/GuestsView';
 import { ReportsView } from './components/ReportsView';
 import { ProposalView } from './components/ProposalView';
+import { InventoryView } from './components/InventoryView';
+import { SettingsView } from './components/SettingsView';
 
 import { POSTerminalModal } from './components/POSTerminalModal';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { ResortInfoModal } from './components/ResortInfoModal';
+import { ReceiptModal, ReceiptData } from './components/ReceiptModal';
 
 import {
   INITIAL_ROOMS,
@@ -34,6 +37,8 @@ import {
   INITIAL_POS_PRODUCTS,
   INITIAL_STAFF_TASKS,
   INITIAL_GUESTS,
+  INITIAL_INVENTORY,
+  INITIAL_INVENTORY_LOGS,
 } from './data/mockData';
 
 import {
@@ -50,12 +55,23 @@ import {
   StaffTask,
   GuestProfile,
   ResortSummaryStats,
+  InventoryItem,
+  InventoryLog,
+  POSProduct,
 } from './types';
 import { useTheme } from './context/ThemeContext';
 
 export function App() {
   const [activeModule, setActiveModule] = useState<ModuleType>('dashboard');
-  const { config } = useTheme();
+  const { config, layoutDensity, layoutStyle } = useTheme();
+
+  // Density padding helper
+  const densityPadding =
+    layoutDensity === 'compact'
+      ? 'p-2 sm:p-4'
+      : layoutDensity === 'spacious'
+      ? 'p-6 sm:p-8 lg:p-12'
+      : 'p-4 sm:p-6 lg:p-8';
 
   // Core State
   const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
@@ -69,18 +85,23 @@ export function App() {
   const [restaurantTables, setRestaurantTables] = useState<RestaurantTable[]>(INITIAL_RESTAURANT_TABLES);
   const [staffTasks, setStaffTasks] = useState<StaffTask[]>(INITIAL_STAFF_TASKS);
   const [guests, setGuests] = useState<GuestProfile[]>(INITIAL_GUESTS);
+  const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
+  const [inventoryLogs, setInventoryLogs] = useState<InventoryLog[]>(INITIAL_INVENTORY_LOGS);
+  const [posProducts, setPosProducts] = useState<POSProduct[]>(INITIAL_POS_PRODUCTS);
   const [todayRevenue, setTodayRevenue] = useState(24850);
 
   // Modals
   const [isPOSOpen, setIsPOSOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [activeReceipt, setActiveReceipt] = useState<ReceiptData | null>(null);
 
   // Compute Live Stats
   const occupiedCount = rooms.filter((r) => r.status === 'Occupied').length;
   const occupancyRate = Math.round((occupiedCount / rooms.length) * 100) || 0;
   const pendingTasksCount = staffTasks.filter((t) => t.status !== 'Completed').length;
   const waterSportsActiveRentals = waterSports.reduce((acc, curr) => acc + curr.currentRentalsCount, 0);
+  const lowStockCount = inventory.filter((i) => i.currentStock <= i.minThreshold).length;
 
   const stats: ResortSummaryStats = {
     todayRevenue,
@@ -168,8 +189,159 @@ export function App() {
     setGuests((prev) => [newGuest, ...prev]);
   };
 
+  // Inventory Handlers
+  const handleRestockItem = (itemId: string, qtyToAdd: number, notes?: string) => {
+    setInventory((prev) =>
+      prev.map((item) => {
+        if (item.id === itemId) {
+          const newStock = item.currentStock + qtyToAdd;
+          const newStatus = newStock === 0 ? 'Out of Stock' : newStock <= item.minThreshold ? 'Low Stock' : 'In Stock';
+          
+          // Add Audit log
+          const newLog: InventoryLog = {
+            id: `LOG-${Date.now().toString().slice(-4)}`,
+            itemId: item.id,
+            itemName: item.name,
+            type: 'Restock',
+            quantityChanged: qtyToAdd,
+            resultingStock: newStock,
+            timestamp: `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+            performedBy: 'Logistics Manager',
+            notes: notes || 'Manual Stock Replenishment',
+          };
+          setInventoryLogs((logs) => [newLog, ...logs]);
+
+          return {
+            ...item,
+            currentStock: newStock,
+            lastRestocked: new Date().toISOString().split('T')[0],
+            status: newStatus,
+          };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleAddNewInventoryItem = (newItemData: Omit<InventoryItem, 'id' | 'status'>) => {
+    const id = `INV-${(inventory.length + 1).toString().padStart(3, '0')}`;
+    const status = newItemData.currentStock === 0 ? 'Out of Stock' : newItemData.currentStock <= newItemData.minThreshold ? 'Low Stock' : 'In Stock';
+    const newItem: InventoryItem = {
+      ...newItemData,
+      id,
+      status,
+    };
+
+    setInventory((prev) => [newItem, ...prev]);
+
+    // Initial Restock Log
+    const newLog: InventoryLog = {
+      id: `LOG-${Date.now().toString().slice(-4)}`,
+      itemId: id,
+      itemName: newItem.name,
+      type: 'Restock',
+      quantityChanged: newItem.currentStock,
+      resultingStock: newItem.currentStock,
+      timestamp: `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+      performedBy: 'System Admin',
+      notes: 'Initial SKU Registration',
+    };
+    setInventoryLogs((logs) => [newLog, ...logs]);
+  };
+
   const handleCompletePOSTransaction = (tx: any) => {
     setTodayRevenue((prev) => prev + tx.total);
+
+    // Show printable receipt modal instantly
+    const receiptData: ReceiptData = {
+      receiptNumber: tx.receiptNumber || `REC-${Date.now().toString().slice(-6)}`,
+      timestamp: tx.timestamp || `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+      cashierName: tx.cashierName || 'POS Cashier #01',
+      paymentMethod: tx.paymentMethod,
+      roomNumber: tx.roomNumber,
+      guestName: tx.guestName,
+      items: tx.items.map((i: any) => ({
+        name: i.name || i.item?.name || 'Resort Service Item',
+        qty: i.qty || 1,
+        price: i.price || i.item?.price || 0,
+      })),
+      subtotal: tx.subtotal,
+      tax: tx.tax,
+      total: tx.total,
+    };
+    setActiveReceipt(receiptData);
+
+    // Auto-deduct inventory stock for matching sold products
+    if (tx.items && tx.items.length > 0) {
+      const logsToAdd: InventoryLog[] = [];
+
+      setInventory((prevInventory) => {
+        const updatedInventory = [...prevInventory];
+        tx.items.forEach((soldItem: any) => {
+          const itemName = (soldItem.name || soldItem.item?.name || '').toLowerCase();
+          const qty = soldItem.qty || 1;
+
+          const matchIndex = updatedInventory.findIndex((inv) =>
+            inv.name.toLowerCase().includes(itemName) || itemName.includes(inv.name.toLowerCase())
+          );
+
+          if (matchIndex !== -1) {
+            const target = updatedInventory[matchIndex];
+            const newStock = Math.max(0, target.currentStock - qty);
+            const newStatus = newStock === 0 ? 'Out of Stock' : newStock <= target.minThreshold ? 'Low Stock' : 'In Stock';
+            
+            updatedInventory[matchIndex] = {
+              ...target,
+              currentStock: newStock,
+              status: newStatus,
+            };
+
+            logsToAdd.push({
+              id: `LOG-${Date.now().toString().slice(-4)}-${Math.floor(Math.random() * 100)}`,
+              itemId: target.id,
+              itemName: target.name,
+              type: 'POS Sale Deduction',
+              quantityChanged: -qty,
+              resultingStock: newStock,
+              timestamp: `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+              performedBy: 'POS Terminal #01',
+              notes: `Auto deduction for receipt ${receiptData.receiptNumber}`,
+            });
+          }
+        });
+        return updatedInventory;
+      });
+
+      if (logsToAdd.length > 0) {
+        setInventoryLogs((logs) => [...logsToAdd, ...logs]);
+      }
+    }
+  };
+
+  const handleRestoreData = (data: any) => {
+    if (data.rooms) setRooms(data.rooms);
+    if (data.inventory) setInventory(data.inventory);
+    if (data.guests) setGuests(data.guests);
+    if (data.staffTasks) setStaffTasks(data.staffTasks);
+    if (data.posProducts) setPosProducts(data.posProducts);
+  };
+
+  const handleResetData = () => {
+    setRooms(INITIAL_ROOMS);
+    setInventory(INITIAL_INVENTORY);
+    setInventoryLogs(INITIAL_INVENTORY_LOGS);
+    setGuests(INITIAL_GUESTS);
+    setStaffTasks(INITIAL_STAFF_TASKS);
+    setPosProducts(INITIAL_POS_PRODUCTS);
+    setVipTables(INITIAL_VIP_LOUNGE);
+    setEvents(INITIAL_EVENTS);
+    setFitnessSessions(INITIAL_FITNESS);
+    setMovieShowtimes(INITIAL_MOVIES);
+    setCourts(INITIAL_COURTS);
+    setConferences(INITIAL_CONFERENCES);
+    setWaterSports(INITIAL_WATER_SPORTS);
+    setRestaurantTables(INITIAL_RESTAURANT_TABLES);
+    setTodayRevenue(24850);
   };
 
   const handleSelectModuleFromSidebar = (module: ModuleType) => {
@@ -191,6 +363,8 @@ export function App() {
         onOpenPOS={() => setIsPOSOpen(true)}
         onOpenAI={() => setIsAIOpen(true)}
         onOpenInfo={() => setIsInfoOpen(true)}
+        activeModule={activeModule}
+        onSelectModule={handleSelectModuleFromSidebar}
         onSearch={(query) => {
           if (query.trim() && activeModule !== 'accommodations' && activeModule !== 'guests') {
             setActiveModule('accommodations');
@@ -205,16 +379,26 @@ export function App() {
           activeModule={activeModule}
           onSelectModule={handleSelectModuleFromSidebar}
           pendingTasksCount={pendingTasksCount}
+          lowStockCount={lowStockCount}
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
+        <main className={`flex-1 ${densityPadding} overflow-y-auto max-w-7xl mx-auto w-full transition-all`}>
           {activeModule === 'dashboard' && (
             <DashboardView
               stats={stats}
               onNavigate={setActiveModule}
               onOpenPOS={() => setIsPOSOpen(true)}
               onOpenAI={() => setIsAIOpen(true)}
+            />
+          )}
+
+          {activeModule === 'inventory' && (
+            <InventoryView
+              inventory={inventory}
+              inventoryLogs={inventoryLogs}
+              onRestockItem={handleRestockItem}
+              onAddNewItem={handleAddNewInventoryItem}
             />
           )}
 
@@ -277,6 +461,21 @@ export function App() {
           {activeModule === 'reports' && <ReportsView stats={stats} />}
 
           {activeModule === 'proposal' && <ProposalView />}
+
+          {activeModule === 'settings' && (
+            <SettingsView
+              systemData={{
+                rooms,
+                inventory,
+                guests,
+                staffTasks,
+                posProducts,
+              }}
+              onRestoreData={handleRestoreData}
+              onResetData={handleResetData}
+              onSelectModule={handleSelectModuleFromSidebar}
+            />
+          )}
         </main>
       </div>
 
@@ -284,7 +483,7 @@ export function App() {
       <POSTerminalModal
         isOpen={isPOSOpen}
         onClose={() => setIsPOSOpen(false)}
-        posCatalog={INITIAL_POS_PRODUCTS}
+        posCatalog={posProducts}
         rooms={rooms}
         onCompleteTransaction={handleCompletePOSTransaction}
       />
@@ -298,6 +497,12 @@ export function App() {
       <ResortInfoModal
         isOpen={isInfoOpen}
         onClose={() => setIsInfoOpen(false)}
+      />
+
+      <ReceiptModal
+        isOpen={!!activeReceipt}
+        onClose={() => setActiveReceipt(null)}
+        receipt={activeReceipt}
       />
 
     </div>
